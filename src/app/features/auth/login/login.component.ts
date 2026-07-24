@@ -1,0 +1,105 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-700">
+      <div class="w-full max-w-md p-8">
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+          <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Tramites Municipales</h1>
+            <p class="text-gray-500 mt-1">Inicia sesion para continuar</p>
+          </div>
+
+          @if (errorMessage) {
+            <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+              {{ errorMessage }}
+            </div>
+          }
+
+          <form (ngSubmit)="onLogin()" class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+              <input type="text" [(ngModel)]="username" name="username"
+                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                     placeholder="Ingresa tu usuario" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
+              <input type="password" [(ngModel)]="password" name="password"
+                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                     placeholder="Ingresa tu contrasena" required />
+            </div>
+            <button type="submit" [disabled]="loading"
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (loading) {
+                <span class="flex items-center justify-center">
+                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Ingresando...
+                </span>
+              } @else {
+                Iniciar Sesion
+              }
+            </button>
+          </form>
+
+          <div class="mt-6 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
+            <p class="font-medium mb-1">Credenciales de prueba:</p>
+            <p><strong>Admin:</strong> admin / Admin&#64;123</p>
+            <p><strong>Operador:</strong> operador / Operador&#64;123</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+})
+export class LoginComponent {
+  username = '';
+  password = '';
+  loading = false;
+  errorMessage = '';
+
+  constructor(private authService: AuthService, private router: Router) {}
+
+  onLogin(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.authService
+      .login({ UserName: this.username, Password: this.password })
+      .subscribe({
+        next: (res) => {
+          this.loading = false;
+          if (res.success) {
+            this.router.navigate(['/dashboard']);
+          } else {
+            this.errorMessage = res.message || 'Credenciales incorrectas';
+          }
+        },
+        error: (err) => {
+          this.loading = false;
+          if (err.status === 401) {
+            this.errorMessage = 'Usuario o contrasena incorrectos';
+          } else {
+            this.errorMessage = 'Error de conexion con el servidor';
+          }
+        },
+      });
+  }
+}
